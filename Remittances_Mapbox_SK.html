@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Remittance Time Scroller</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.8.0/mapbox-gl.js"></script>
+    
+    <style>
+    body { 
+        margin: 0; 
+        padding: 0; 
+        height:100%;
+    } 
+        #map { 
+            position: absolute; 
+            top: -100px; 
+            bottom: 0; 
+            width: 100%; 
+    }
+
+    #popup { 
+
+        width:50%;
+        font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; 
+        position: absolute; top: 0; bottom: 0;        
+        left:50%;
+        z-index:1;
+        border: 2px solid black; 
+        border-radius: 10px; 
+        outline: 1px black; 
+    }
+
+
+        #slider {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30%;
+            z-index: 1;
+    }
+
+    #slider {
+        -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+        appearance: none; /* Remove default styling */
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 50%;
+        z-index: 1;
+        height: 8px; /* Thickness of the line */
+        background: white; /* Gradient color */
+        border-radius: 5px; /* Rounded corners */
+        border: 1px solid black; /* Black border */
+        outline: none; /* Remove outline */
+    }
+
+    #slider:hover {
+        opacity: 1;
+    }
+    #slider::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Remove default styling */
+        appearance: none;
+        width: 20px; /* Handle width */
+        height: 20px; /* Handle height */
+        background: white; /* Handle color */
+        border-radius: 50%; /* Make it circular */
+        cursor: pointer; /* Pointer on hover */
+        border: 1px solid black; 
+    }
+    #slider::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: black;
+        border: 2px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    #slider::-ms-thumb {
+        width: 20px;
+        height: 20px;
+        background: black;
+        border: 2px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+        #year-label {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: white;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; 
+            padding: 5px;
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+    }
+
+</style>
+</head>
+<body>
+
+<div id="map"></div> 
+<div id="year-label">Year: 2019</div>
+<input id="slider" type="range" min="2019" max="2023" value="2019" step="1">
+
+<!-- To make the mapbox appear, add token and specific mapbox style  -->
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1Ijoic2s1MzExIiwiYSI6ImNtMmpxamk4NjA4a2cycHBzOHlvamIzdW8ifQ.hkJYLgME-65HPgEYIOwmMw';
+
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/sk5311/cm466vrj9017701rw0srt0zkr', 
+        center: [-4.9, 4,2], 
+        zoom: 1.4,
+        pitch: 0,
+        bearing: 0,
+    });
+
+    const geojsonData = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "location": "Philippines",
+                    "remittances": {
+                        "2019": 30130000000,
+                        "2020": 29900000000,
+                        "2021": 31420000000,
+                        "2022": 32540000000,
+                        "2023": 33490000000
+                    }
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [122.897, 11.72]
+                }
+            }
+        ]
+    };
+
+    map.on('load', () => {
+
+        console.log(map.getStyle().layers)
+
+        // map.addSource('Countries_Polygons1', {
+        //     type: 'fill',
+        //     data: map
+        // });
+
+        // map.addLayer({
+        //     id: 'countries-polygons1',
+        //     type: 'fill',
+        //     source: 'Countries_Polygons1'
+        // })
+
+        // Add GeoJSON data as a source
+        map.addSource('remittances', {
+            type: 'geojson',
+            data: geojsonData
+        });
+
+        // Add a circle layer to visualize the point
+        map.addLayer({
+            id: 'remittances-layer',
+            type: 'circle',
+            source: 'remittances',
+            paint: {
+                'circle-radius': 3, // Placeholder; updated dynamically
+                'circle-color': '#CE1126',
+                'circle-opacity': 0.5
+        }});
+        
+        /*map.on('click', 'countries-polygons1', (e) => { 
+            new mapboxgl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(e.features[0].properties.name, properties.Y_2019)
+                .addTo(map);
+            });   */   
+        
+    /* map.on('click', 'countries-polygons1', (e) => { 
+    const properties = e.features[0].properties;
+
+    const popupContent = `
+        <strong>Country:</strong> ${properties.name || 'Unknown'}<br>
+        <strong>Remittance:</strong> ${properties.Y_2019 ? properties.Y_2019.toLocaleString() : 'No data'}<br>
+        <strong>Region:</strong> ${properties.region || 'No data'}
+    `;
+
+    new mapboxgl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(popupContent)
+        .addTo(map);
+}); */ 
+
+
+// Add an event listener for clicks on the countries-polygons1 layer
+map.on('click', 'countries-polygons1', (e) => { 
+    const properties = e.features[0].properties;
+
+    // Get the selected year from the time slider
+    const selectedYear = document.getElementById('slider').value;
+
+    // Dynamically construct the remittance property key based on the selected year
+    const remittanceKey = `Y_${selectedYear}`;
+    const remittanceValue = properties[remittanceKey];
+
+    // Construct the popup content dynamically
+    const popupContent = `
+    <div class="popup">
+        <strong>Country:</strong> ${properties.name || 'Unknown'}<br>
+        <strong>Year:</strong> ${selectedYear}<br>
+        <strong>Remittance:</strong> ${remittanceValue ? `${remittanceValue.toLocaleString()}` : 'No data'}<br>
+        <strong>Region:</strong> ${properties.region || 'No data'}
+    `;
+
+    // Display the popup at the clicked location
+    new mapboxgl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(popupContent)
+        .addTo(map);
+});
+
+// Time slider event listener to update the year label dynamically
+const slider = document.getElementById('slider');
+const yearLabel = document.getElementById('year-label');
+
+slider.addEventListener('input', () => {
+    yearLabel.textContent = `Year: ${slider.value}`;
+});
+
+
+
+        
+        
+        // Define the years
+        const years = ['2019', '2020', '2021', '2022', '2023'];
+
+        // Add line layers for each year
+        years.forEach((year, index) => {
+            map.addLayer({
+            id: `country_lines${year}`,
+            type: 'line',
+            source: 'Country_Lines-7qj5fb', 
+            layout: {
+                visibility: index === 0 ? 'visible' : 'none' // Show the first year by default
+            },
+            paint: {
+                'line-color': '#7791DD',
+                'line-width': 5
+            },
+            filter: ['==', ['get', 'year'], year]
+        });
+
+
+                                                        ///////NOTE///////
+
+    // It seems like the layers automatically show when you load the map, so that's why the circle was not changing size
+    // because the lines were being called again and layered on top of the circle; so we don't have to manually add source
+    // for the lines?? 
+    // map.addSource('Countries_Polygons-ayy4lc', {
+    //         type: 'fill',
+    //         data: map
+    //     });
+
+        // map.addLayer({
+        //     id: 'country_polygons',
+        //     type: 'fill',
+        //     source: 'Countries_Polygons-ayy4lc',
+        //     paint: {
+        //         //'fill-color': '#333',
+        //         'fill-opacity': 0.8,
+        //         'fill-outline-color': '#CE1126'
+        //     }
+
+        // })
+
+                                                            ///////NOTE///////
+    ///Turning this on and off seems to help update the layers faster?
+    // map.addSource('Country_Lines-7qj5fb', {
+    //     type: 'line',
+    //     data: map
+    // });
+
+    // // Add 2019 lines 
+    // map.addLayer({
+    //     id: 'country_lines2019',
+    //     type: 'line',
+    //     source: 'Country_Lines-7qj5fb',
+    //     layout: {
+    //         'visibility': 'none' // Show this layer initially
+    //     }
+    // });
+    // // Add 2020 lines 
+    // map.addLayer({
+    //     id: 'country_lines202020',
+    //     type: 'line',
+    //     source: 'Country_Lines-7qj5fb',
+    //     layout: {
+    //         'visibility': 'none' // Hide this layer initially
+    //     }
+    // });
+    // // Add 2021 lines 
+    // map.addLayer({
+    //     id: 'country_lines2021',
+    //     type: 'line',
+    //     source: 'Country_Lines-7qj5fb',
+    //     layout: {
+    //         'visibility': 'none' // Hide this layer initially
+    //     }
+    // });
+    // // Add 2022 lines 
+    // map.addLayer({
+    //     id: 'country_lines202022',
+    //     type: 'line',
+    //     source: 'Country_Lines-7qj5fb',
+    //     layout: {
+    //         'visibility': 'none' // Hide this layer initially
+    //     }
+    // });
+    // // Add 2023 lines 
+    // map.addLayer({
+    //     id: 'country_lines2023',
+    //     type: 'line',
+    //     source: 'Country_Lines-7qj5fb',
+    //     layout: {
+    //         'visibility': 'none' // Hide this layer initially
+    //     }
+    // });
+
+                                                ///////TIME SCROLLING CODE///////
+
+    // Update circle size based on the selected year
+    const slider = document.getElementById('slider');
+    const yearLabel = document.getElementById('year-label');
+    
+    function updateLayersAndCircle(selectedYear) {
+        // Update year label
+        yearLabel.textContent = `Year: ${selectedYear}`;
+
+        // Toggle line layer visibility
+        years.forEach((year) => {
+            const visibility = year === selectedYear ? 'visible' : 'none';
+            map.setLayoutProperty(`country_lines${year}`, 'visibility', visibility);
+            map.setLayoutProperty(`countries-polygons1${year}`, 'visibility', visibility);
+        });
+
+        // Update circle size for the selected year
+        const features = geojsonData.features;
+        features.forEach((feature) => {
+            const remittance = feature.properties.remittances[selectedYear];
+            map.setPaintProperty('remittances-layer', 'circle-radius', [
+                'interpolate',
+                ['linear'],
+                remittance,
+                29000000000, 5, // Min remittance (29B): smallest circle size
+                34000000000, 35 // Max remittance: largest circle size
+            ]);
+        });
+    }
+    // Initialize with the default year
+    updateLayersAndCircle(slider.value);
+
+    // Event listener for slider changes
+    slider.addEventListener('input', (e) => {
+        const selectedYear = e.target.value;
+        updateLayersAndCircle(selectedYear);
+    });
+
+    map.on('mouseenter', 'countries-polygons1', () => { 
+        map.getCanvas().style.cursor = 'pointer'; 
+    }); 
+
+    map.on('mouseleave', 'countries-polygons1', () => {
+        map.getCanvas().style.cursor = ''; 
+    }); 
+
+});
+
+    }); 
+
+</script>
+</body>
+</html>
